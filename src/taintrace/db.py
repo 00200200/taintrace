@@ -1,0 +1,95 @@
+"""Known packages database — embedded for offline use."""
+
+from typing import List, Tuple, Dict
+
+
+class KnownPackagesDB:
+    """In-memory database of known legitimate packages."""
+
+    def __init__(self):
+        """Load built-in package database."""
+        self._packages: Dict[str, set] = {
+            "rust": self._RUST_PACKAGES,
+            "node": self._NODE_PACKAGES,
+            "python": self._PYTHON_PACKAGES,
+            "go": self._GO_PACKAGES,
+        }
+
+    def is_known(self, name: str, ecosystem: str = "rust") -> bool:
+        """Check if a package name is in the known packages list."""
+        packages = self._packages.get(ecosystem, set())
+        return name.lower() in {p.lower() for p in packages}
+
+    def get_similar(self, name: str, threshold: float = 0.8, 
+                     ecosystem: str = "rust") -> List[Tuple[str, float]]:
+        """Find known packages similar to the given name."""
+        from taintrace.similarity import SimilarityEngine
+        engine = SimilarityEngine()
+        results = []
+        packages = self._packages.get(ecosystem, set())
+        for known_name in packages:
+            score = engine.similarity(name.lower(), known_name.lower())
+            if score >= threshold:
+                results.append((known_name, score))
+        results.sort(key=lambda x: x[1], reverse=True)
+        return results[:10]  # Return top 10
+
+    # Built-in package lists (top packages per ecosystem)
+    _RUST_PACKAGES = {
+        "serde", "tokio", "clap", "reqwest", "actix", "actix-web", "warp",
+        "hyper", "rocket", "axum", "sqlx", "diesel", "rusqlite", "redis",
+        "chrono", "uuid", "regex", "rand", "log", "env_logger", "anyhow",
+        "thiserror", "serde_json", "serde_derive", "proc-macro2", "quote",
+        "syn", "libc", "bytes", "futures", "async-trait", "once_cell",
+        "parking_lot", "crossbeam", "rayon", "itertools", "bitflags",
+        "lazy_static", "http", "tracing", "tower", "pin-project",
+        "mio", "rustls", "tokio-util", "async-std", "smol",
+        "serde_yaml", "toml", "cargo", "hashbrown", "indexmap",
+        "url", "percent-encoding", "unicode-normalization",
+        "tracing-subscriber", "tracing-log", "tracing-bunyan",
+        "thiserror-impl", "serde", "arrayvec", "smallvec", "heck",
+        "cargo_metadata", "gloo", "wasm-bindgen", "js-sys",
+        "web-sys", "console_error_panic_hook",
+    }
+
+    _NODE_PACKAGES = {
+        "react", "vue", "angular", "svelte", "next", "nuxt", "express",
+        "lodash", "moment", "axios", "webpack", "vite", "typescript",
+        "eslint", "prettier", "jest", "mocha", "chai", "cypress",
+        "react-dom", "react-router", "redux", "mobx", "graphql",
+        "apollo", "prisma", "sequelize", "typeorm", "mongoose",
+        "passport", "jsonwebtoken", "bcrypt", "cors", "dotenv",
+        "nodemailer", "multer", "sharp", "socket.io", "uuid",
+        "winston", "morgan", "helmet", "compression", "express-rate-limit",
+        "jest", "vitest", "ts-node", "tsx", "esbuild", "rollup",
+        "babel", "core-js", "regenerator-runtime", "core-js-pure",
+        "lodash-es", "ramda", "immutable", "rxjs", "tslib",
+        "debug", "ms", "semver", "rimraf", "glob", "minimatch",
+    }
+
+    _PYTHON_PACKAGES = {
+        "requests", "flask", "django", "fastapi", "pandas", "numpy",
+        "scipy", "scikit-learn", "tensorflow", "pytorch", "transformers",
+        "pytest", "black", "ruff", "mypy", "isort", "pylint",
+        "sphinx", "mkdocs", "jupyter", "matplotlib", "seaborn",
+        "sqlalchemy", "alembic", "pydantic", "httpx", "aiohttp",
+        "celery", "redis", "boto3", "botocore", "awscli",
+        "click", "typer", "rich", "logstructlog", "structlog",
+        "python-dateutil", "pytz", "six", "certifi", "charset-normalizer",
+        "idna", "urllib3", "packaging", "pyparsing", "tomli",
+        "pathlib", "functools", "itertools", "collections",
+        "typing-extensions", "annotated-types", "typing-inspection",
+        "mcp", "httpx-sse", "pydantic-core", "anyio", "sniffio",
+        "h11", "httpcore", "certifi", "click", "rich",
+    }
+
+    _GO_PACKAGES = {
+        "gin", "echo", "fiber", "chi", "gorilla/mux", "httprouter",
+        "gorm", "sqlx", "ent", "migrate", "cobra", "viper",
+        "logrus", "zap", "zerolog", "opentelemetry", "prometheus",
+        "grpc", "protobuf", "wire", "fx", "testify", "ginkgo",
+        "gomega", "gomock", "go-sql-driver/mysql", "go-redis",
+        "mongo-go-driver", "aws-sdk-go", "kubernetes/client-go",
+        "docker/client", "stretchr/testify", "sirupsen/logrus",
+        "pkg/errors", "go-kit/kit", "go-micro",
+    }

@@ -1,0 +1,50 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "taintrace"
+version = "0.1.0"
+description = "Typosquat detector for AI coding agent dependencies"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.10"
+authors = [{name = "Yunaremaia", email = "yunare@gmail.com"}]
+keywords = ["security", "supply-chain", "typosquat", "ai-agents", "dependencies"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Security",
+    "Topic :: Software Development :: Quality Assurance",
+]
+dependencies = [
+    "click>=8.1",
+    "rich>=13.0",
+    "rapidfuzz>=3.0",
+]
+
+[project.scripts]
+taintrace = "taintrace.cli:cli"
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0", "pytest-cov>=4.0"]
+
+[project.urls]
+Homepage = "https://github.com/yunaremaia/taintrace"
+Issues = "https://github.com/yunaremaia/taintrace/issues"
+Funding = "https://github.com/sponsors/yunaremaia"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+
+[tool.coverage.run]
+source = ["src/taintrace"]
