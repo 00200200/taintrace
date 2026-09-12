@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "taintrace"
-version = "0.1.0"
+version = "0.2.0"
 description = "Typosquat detector for AI coding agent dependencies"
 readme = "README.md"
 license = {text = "MIT"}

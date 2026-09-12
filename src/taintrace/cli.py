@@ -32,11 +32,15 @@ def cli():
               help="Output format")
 @click.option("--threshold", "-t", default=0.7, type=float,
               help="Similarity threshold (0.0-1.0)")
-@click.option("--ecosystem", "-e", default="rust",
-              type=click.Choice(["rust", "node", "python", "go"]),
-              help="Package ecosystem")
+@click.option("--ecosystem", "-e", default="auto",
+              type=click.Choice(["auto", "rust", "node", "python", "go"]),
+              help="Package ecosystem (auto-detect from filename by default)")
 def check(lockfile: Path, output_format: str, threshold: float, ecosystem: str):
     """Check a lockfile for typosquatting."""
+    # Auto-detect ecosystem from filename if not specified
+    if ecosystem == "auto":
+        ecosystem = _detect_ecosystem(lockfile)
+    
     detector = TyposquatDetector(ecosystem=ecosystem)
     results = detector.scan(lockfile)
     
@@ -65,6 +69,20 @@ def score(name: str, ecosystem: str):
     detector = TyposquatDetector(ecosystem=ecosystem)
     result = detector.scan_dependency(name, ecosystem=ecosystem)
     _output_single(result)
+
+
+def _detect_ecosystem(lockfile: Path) -> str:
+    """Detect ecosystem from lockfile filename."""
+    name = lockfile.name.lower()
+    if name in ("cargo.lock", "cargo.toml"):
+        return "rust"
+    elif name in ("package-lock.json", "pnpm-lock.yaml", "yarn.lock"):
+        return "node"
+    elif name in ("requirements.txt", "poetry.lock"):
+        return "python"
+    elif name == "go.sum":
+        return "go"
+    return "rust"
 
 
 def _output_cli(results: list, suspects: list, lockfile: Path):
