@@ -1,0 +1,112 @@
+name: 'taintrace'
+description: 'Typosquat detector for AI coding agent dependencies'
+author: 'Yunare Maia'
+branding:
+  icon: 'shield'
+  color: 'red'
+
+inputs:
+  lockfile:
+    description: 'Path to lockfile (Cargo.lock, package-lock.json, requirements.txt, go.sum)'
+    required: false
+    default: ''
+  path:
+    description: 'Repository root to scan (auto-detects lockfiles when lockfile not specified)'
+    required: false
+    default: '.'
+  format:
+    description: 'Output format (cli, json, sarif)'
+    required: false
+    default: 'cli'
+  threshold:
+    description: 'Similarity threshold (0.0-1.0) for typosquat detection'
+    required: false
+    default: '0.7'
+  ecosystem:
+    description: 'Package ecosystem (auto, rust, node, python, go)'
+    required: false
+    default: 'auto'
+  sarif-output:
+    description: 'Output SARIF file path'
+    required: false
+    default: 'taintrace.sarif'
+  fail-on-suspects:
+    description: 'Fail the step if typosquat suspects are found (default: true)'
+    required: false
+    default: 'true'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Set up Python
+      uses: actions/setup-python@v6
+      with:
+        python-version: '3.11'
+
+    - name: Install taintrace
+      shell: bash
+      run: pip install taintrace
+
+    - name: Run taintrace
+      id: taintrace
+      shell: bash
+      run: |
+        set +e
+        if [ -n "${{ inputs.lockfile }}" ]; then
+          LOCKFILE="${{ inputs.lockfile }}"
+        else
+          # Auto-detect lockfile
+          ROOT="${{ inputs.path }}"
+          if [ -f "$ROOT/Cargo.lock" ]; then LOCKFILE="$ROOT/Cargo.lock"
+          elif [ -f "$ROOT/package-lock.json" ]; then LOCKFILE="$ROOT/package-lock.json"
+          elif [ -f "$ROOT/requirements.txt" ]; then LOCKFILE="$ROOT/requirements.txt"
+          elif [ -f "$ROOT/go.sum" ]; then LOCKFILE="$ROOT/go.sum"
+          elif [ -f "$ROOT/pnpm-lock.yaml" ]; then LOCKFILE="$ROOT/pnpm-lock.yaml"
+          elif [ -f "$ROOT/yarn.lock" ]; then LOCKFILE="$ROOT/yarn.lock"
+          elif [ -f "$ROOT/poetry.lock" ]; then LOCKFILE="$ROOT/poetry.lock"
+          else
+            echo "::warning::No lockfile found in $ROOT"
+            exit 0
+          fi
+          fi
+        fi
+
+        echo "Scanning: $LOCKFILE"
+
+        if [ "${{ inputs.format }}" = "sarif" ]; then
+          taintrace check "$LOCKFILE" \
+            --format sarif \
+            --threshold "${{ inputs.threshold }}" \
+            --ecosystem "${{ inputs.ecosystem }}" \
+            > "${{ inputs.sarif-output }}"
+          exit_code=$?
+        elif [ "${{ inputs.format }}" = "json" ]; then
+          taintrace check "$LOCKFILE" \
+            --format json \
+            --threshold "${{ inputs.threshold }}" \
+            --ecosystem "${{ inputs.ecosystem }}"
+          exit_code=$?
+        else
+          taintrace check "$LOCKFILE" \
+            --threshold "${{ inputs.threshold }}" \
+            --ecosystem "${{ inputs.ecosystem }}"
+          exit_code=$?
+        fi
+
+        echo "exit_code=$exit_code" >> "$GITHUB_OUTPUT"
+        if [ "$exit_code" -ne 0 ]; then
+          echo "suspects=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "suspects=false" >> "$GITHUB_OUTPUT"
+        fi
+        if [ "${{ inputs.fail-on-suspects }}" = "true" ]; then
+          exit $exit_code
+        fi
+        exit 0
+
+    - name: Upload SARIF
+      if: inputs.format == 'sarif' && always()
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: ${{ inputs.sarif-output }}
+        wait-for-processing: false

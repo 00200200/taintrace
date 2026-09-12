@@ -1,0 +1,8 @@
+- id: taintrace
+  name: Check for typosquat dependencies
+  entry: taintrace check
+  language: python
+  files: '(Cargo\.lock|package-lock\.json|requirements\.txt|go\.sum|pnpm-lock\.yaml|yarn\.lock|poetry\.lock)$'
+  additional_dependencies:
+    - "taintrace>=0.2.0"
+  args: ["--no-informational"]

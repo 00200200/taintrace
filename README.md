@@ -79,32 +79,46 @@ taintrace score proc-macro1
 | Python    | requirements.txt   | ✅     |
 | Go        | go.sum             | ✅     |
 
+## Multi-ecosystem
+
+| Ecosystem | Lockfiles                              | Status |
+|-----------|----------------------------------------|--------|
+| Rust      | Cargo.lock, Cargo.toml                 | ✅     |
+| Node.js   | package-lock.json, pnpm-lock.yaml, yarn.lock | ✅     |
+| Python    | requirements.txt, poetry.lock          | ✅     |
+| Go        | go.sum                                 | ✅     |
+
 ## CI/CD integration
 
 ### GitHub Action
 
 ```yaml
-- name: Check for typosquatting
-  run: |
-    pip install taintrace
-    taintrace check Cargo.lock --format sarif > results.sarif
-- name: Upload SARIF
-  uses: github/codeql-action/upload-sarif@v3
+- uses: yunaremaia/taintrace@main
   with:
-    sarif_file: results.sarif
+    lockfile: Cargo.lock
+    format: sarif
+    sarif-output: taintrace.sarif
+- uses: github/codeql-action/upload-sarif@v3
+  with:
+    sarif_file: taintrace.sarif
+```
+
+Auto-detect lockfiles in your repo root:
+
+```yaml
+- uses: yunaremaia/taintrace@main
+  with:
+    format: cli
 ```
 
 ### Pre-commit hook
 
 ```yaml
 repos:
-  - repo: local
+  - repo: https://github.com/yunaremaia/taintrace
+    rev: v0.2.0
     hooks:
       - id: taintrace
-        name: taintrace
-        entry: taintrace check
-        language: system
-        files: '(Cargo.lock|package-lock.json|requirements.txt|go.sum)$'
 ```
 
 ## Why taintrace?

@@ -9,7 +9,7 @@ description = "Typosquat detector for AI coding agent dependencies"
 readme = "README.md"
 license = {text = "MIT"}
 requires-python = ">=3.10"
-authors = [{name = "Yunaremaia", email = "yunare@gmail.com"}]
+authors = [{name = "Yunare Maia", email = "yunare@gmail.com"}]
 keywords = ["security", "supply-chain", "typosquat", "ai-agents", "dependencies"]
 classifiers = [
     "Development Status :: 3 - Alpha",
