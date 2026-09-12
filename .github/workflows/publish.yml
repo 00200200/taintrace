@@ -10,6 +10,8 @@ permissions:
 jobs:
   pypi-publish:
     runs-on: ubuntu-latest
+    environment:
+      name: pypi
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
