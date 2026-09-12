@@ -13,6 +13,7 @@ from rich.text import Text
 
 from taintrace.detector import TyposquatDetector, DetectionResult
 from taintrace.scorer import RiskLevel
+from taintrace import __version__
 
 
 console = Console()
@@ -88,7 +89,7 @@ def _detect_ecosystem(lockfile: Path) -> str:
 def _output_cli(results: list, suspects: list, lockfile: Path):
     """Rich CLI output."""
     console.print(Panel(
-        f"[bold]taintrace v0.1.0[/bold] — scanning [cyan]{lockfile.name}[/cyan]\n"
+        f"[bold]taintrace v{__version__}[/bold] — scanning [cyan]{lockfile.name}[/cyan]\n"
         f"Total deps: {len(results)} | Suspects: {len(suspects)}",
         title="Scan Results"
     ))
@@ -122,7 +123,7 @@ def _output_json(results: list, suspects: list):
     """JSON output."""
     output = {
         "tool": "taintrace",
-        "version": "0.1.0",
+        "version": __version__,
         "summary": {
             "total": len(results),
             "suspects": len(suspects),
@@ -156,7 +157,7 @@ def _output_sarif(results: list, suspects: list, lockfile: Path):
             "tool": {
                 "driver": {
                     "name": "taintrace",
-                    "version": "0.1.0",
+                    "version": __version__,
                     "informationUri": "https://github.com/yunaremaia/taintrace",
                     "rules": [
                         {
