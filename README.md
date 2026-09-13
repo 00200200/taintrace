@@ -18,6 +18,18 @@ pip install taintrace
 
 ## Usage
 
+### Scan lockfiles
+
+```bash
+taintrace check Cargo.lock
+```
+
+Multiple lockfiles at once:
+
+```bash
+taintrace check Cargo.lock package-lock.json requirements.txt
+```
+
 ### Scan a lockfile
 
 ```bash
@@ -26,7 +38,7 @@ taintrace check Cargo.lock
 
 ```
 ╭──────────────────────────────────────────────╮
-│ taintrace v0.1.0 — scanning Cargo.lock       │
+│ taintrace v0.2.1 — scanning Cargo.lock       │
 │ Total deps: 42 | Suspects: 1                 │
 ╰──────────────────────────────────────────────╯
 
