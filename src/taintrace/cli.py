@@ -27,7 +27,7 @@ def cli():
 
 
 @cli.command()
-@click.argument("lockfile", type=click.Path(exists=True, path_type=Path))
+@click.argument("lockfiles", nargs=-1, type=click.Path(exists=True, path_type=Path))
 @click.option("--format", "-f", "output_format", 
               type=click.Choice(["cli", "json", "sarif"]), default="cli",
               help="Output format")
@@ -36,27 +36,46 @@ def cli():
 @click.option("--ecosystem", "-e", default="auto",
               type=click.Choice(["auto", "rust", "node", "python", "go"]),
               help="Package ecosystem (auto-detect from filename by default)")
-def check(lockfile: Path, output_format: str, threshold: float, ecosystem: str):
-    """Check a lockfile for typosquatting."""
-    # Auto-detect ecosystem from filename if not specified
-    if ecosystem == "auto":
-        ecosystem = _detect_ecosystem(lockfile)
+@click.option("--no-informational", is_flag=True,
+              help="Suppress MEDIUM/LOW risk results (informational only)")
+def check(lockfiles: tuple[Path, ...], output_format: str, threshold: float,
+          ecosystem: str, no_informational: bool):
+    """Check one or more lockfiles for typosquatting."""
+    if not lockfiles:
+        click.echo("Error: at least one lockfile required", err=True)
+        sys.exit(2)
     
-    detector = TyposquatDetector(ecosystem=ecosystem)
-    results = detector.scan(lockfile)
+    all_results = []
+    all_suspects = []
     
-    # Filter by threshold
-    suspects = [r for r in results if r.is_suspect and r.risk_score >= threshold]
+    for lockfile in lockfiles:
+        # Auto-detect ecosystem from filename if not specified
+        eco = ecosystem
+        if eco == "auto":
+            eco = _detect_ecosystem(lockfile)
+        
+        detector = TyposquatDetector(ecosystem=eco)
+        results = detector.scan(lockfile)
+        
+        # Filter by threshold
+        suspects = [r for r in results if r.is_suspect and r.risk_score >= threshold]
+        
+        # Filter out informational (LOW/MEDIUM) if requested
+        if no_informational:
+            suspects = [r for r in suspects if r.risk_level in ("CRITICAL", "HIGH")]
+        
+        all_results.extend(results)
+        all_suspects.extend(suspects)
     
     if output_format == "json":
-        _output_json(results, suspects)
+        _output_json(all_results, all_suspects)
     elif output_format == "sarif":
-        _output_sarif(results, suspects, lockfile)
+        _output_sarif(all_results, all_suspects, lockfiles[0])
     else:
-        _output_cli(results, suspects, lockfile)
+        _output_cli(all_results, all_suspects, list(lockfiles))
     
     # Exit code 1 if suspects found (CI/CD gate)
-    if suspects:
+    if all_suspects:
         sys.exit(1)
 
 
@@ -86,10 +105,11 @@ def _detect_ecosystem(lockfile: Path) -> str:
     return "rust"
 
 
-def _output_cli(results: list, suspects: list, lockfile: Path):
+def _output_cli(results: list, suspects: list, lockfiles: list[Path]):
     """Rich CLI output."""
+    names = ", ".join(lf.name for lf in lockfiles)
     console.print(Panel(
-        f"[bold]taintrace v{__version__}[/bold] — scanning [cyan]{lockfile.name}[/cyan]\n"
+        f"[bold]taintrace v{__version__}[/bold] — scanning [cyan]{names}[/cyan]\n"
         f"Total deps: {len(results)} | Suspects: {len(suspects)}",
         title="Scan Results"
     ))
