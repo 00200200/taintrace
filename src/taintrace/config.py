@@ -18,7 +18,11 @@ def load_config(cwd: Optional[Path] = None) -> dict:
         config_path = cwd / name
         if config_path.exists():
             try:
-                import tomllib
+                try:
+                    import tomllib
+                except ModuleNotFoundError:
+                    import tomli as tomllib
+
                 with open(config_path, "rb") as f:
                     data = tomllib.load(f)
                     return data.get("taintrace", {})
