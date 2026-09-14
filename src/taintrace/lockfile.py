@@ -27,6 +27,8 @@ EXTENDED_FORMATS = {
     "pyproject.toml": ("python", "_parse_pyproject_toml"),
     "gemfile.lock": ("ruby", "_parse_gemfile_lock"),
     "pipfile.lock": ("python", "_parse_pipfile_lock"),
+    "bun.lock": ("node", "_parse_bun_lock"),
+    "bun.lockb": ("node", "_parse_bun_lockb"),
 }
 
 
@@ -383,3 +385,42 @@ class LockfileParser:
                     ecosystem="python",
                 ))
         return deps
+
+    def _parse_bun_lock(self, path: Path) -> List[Dependency]:
+        """Parse Bun text lockfile (bun.lock).
+
+        Bun's text format (v1.0+) is JSON-like with a "packages" dict:
+        {
+          "packages": {
+            "react": "18.2.0",
+            "lodash": "4.17.21",
+            "@types/react": "18.2.0"
+          }
+        }
+        """
+        deps = []
+        try:
+            data = json.loads(path.read_text(encoding="utf-8", errors="replace"))
+        except (json.JSONDecodeError, FileNotFoundError):
+            return deps
+        packages = data.get("packages", {})
+        if isinstance(packages, dict):
+            for name, version in packages.items():
+                if isinstance(version, str):
+                    deps.append(Dependency(name=name, version=version, ecosystem="node"))
+        return deps
+
+    def _parse_bun_lockb(self, path: Path) -> List[Dependency]:
+        """Parse Bun binary lockfile (bun.lockb).
+
+        Binary format — cannot parse without Bun runtime.
+        Return empty list with a warning.
+        """
+        import warnings
+        warnings.warn(
+            "bun.lockb is a binary format and cannot be parsed without Bun runtime. "
+            "Use 'bun bun.lock' to convert to text format first.",
+            UserWarning,
+            stacklevel=2,
+        )
+        return []

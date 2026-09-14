@@ -110,7 +110,7 @@ def _detect_ecosystem(lockfile: Path) -> str:
     name = lockfile.name.lower()
     if name in ("cargo.lock", "cargo.toml"):
         return "rust"
-    elif name in ("package-lock.json", "pnpm-lock.yaml", "yarn.lock"):
+    elif name in ("package-lock.json", "pnpm-lock.yaml", "yarn.lock", "bun.lock", "bun.lockb"):
         return "node"
     elif name in ("requirements.txt", "poetry.lock"):
         return "python"

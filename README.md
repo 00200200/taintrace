@@ -108,7 +108,7 @@ Ignored packages are excluded from CLI, JSON, and SARIF output.
 | Ecosystem | Lockfiles                              | Status |
 |-----------|----------------------------------------|--------|
 | Rust      | Cargo.lock, Cargo.toml                 | ✅     |
-| Node.js   | package-lock.json, pnpm-lock.yaml, yarn.lock | ✅     |
+| Node.js   | package-lock.json, pnpm-lock.yaml, yarn.lock, bun.lock, bun.lockb | ✅     |
 | Python    | requirements.txt, poetry.lock, pyproject.toml (PEP 621 + Poetry), uv.lock, Pipfile.lock | ✅     |
 | Go        | go.sum                                 | ✅     |
 | Ruby      | Gemfile.lock                           | ✅     |
