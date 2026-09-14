@@ -42,8 +42,10 @@ def cli():
               help="Suppress MEDIUM/LOW risk results (informational only)")
 @click.option("--ignore", "-i", multiple=True, type=str,
               help="Ignore specific packages (repeatable, can also be set in .taintrace.toml)")
+@click.option("--quiet", "-q", is_flag=True,
+              help="Suppress summaries and print only suspect results")
 def check(lockfiles: tuple[Path, ...], output_format: str, threshold: float,
-          ecosystem: str, no_informational: bool, ignore: tuple[str, ...]):
+          ecosystem: str, no_informational: bool, ignore: tuple[str, ...], quiet: bool):
     """Check one or more lockfiles for typosquatting."""
     if not lockfiles:
         click.echo("Error: at least one lockfile required", err=True)
@@ -83,7 +85,9 @@ def check(lockfiles: tuple[Path, ...], output_format: str, threshold: float,
         all_results.extend(results)
         all_suspects.extend(suspects)
     
-    if output_format == "json":
+    if quiet and output_format == "cli":
+        _output_quiet(all_suspects)
+    elif output_format == "json":
         _output_json(all_results, all_suspects)
     elif output_format == "sarif":
         _output_sarif(all_results, all_suspects, lockfiles[0])
@@ -186,6 +190,17 @@ def _output_json(results: list, suspects: list):
         ]
     }
     click.echo(json.dumps(output, indent=2))
+
+
+def _output_quiet(suspects: list):
+    """Output one compact JSON object per suspect without any decoration."""
+    for result in suspects:
+        click.echo(json.dumps({
+            "package": result.dependency.name,
+            "risk": result.risk_level,
+            "score": round(result.risk_score, 3),
+            "similar_to": result.similar_packages,
+        }))
 
 
 def _output_sarif(results: list, suspects: list, lockfile: Path):
@@ -301,13 +316,16 @@ def _find_lockfiles(path: Path) -> list[tuple[Path, str]]:
               help="Suppress MEDIUM/LOW risk results")
 @click.option("--ignore", "-i", multiple=True, type=str,
               help="Ignore specific packages (repeatable)")
+@click.option("--quiet", "-q", is_flag=True,
+              help="Suppress summaries and print only suspect results")
 def scan_directory(path: Path, output_format: str, threshold: float,
-                   no_informational: bool, ignore: tuple[str, ...]):
+                   no_informational: bool, ignore: tuple[str, ...], quiet: bool):
     """Recursively scan a directory tree for typosquatting in all lockfiles."""
     found = _find_lockfiles(path)
     
     if not found:
-        console.print(f"[yellow]No lockfiles found in {path}[/yellow]")
+        if not quiet:
+            console.print(f"[yellow]No lockfiles found in {path}[/yellow]")
         return
     
     # Sort for deterministic output
@@ -340,7 +358,7 @@ def scan_directory(path: Path, output_format: str, threshold: float,
         per_file[lockfile] = (results, suspects)
     
     # Per-file summary
-    if len(found) > 1:
+    if len(found) > 1 and not quiet:
         console.print(f"[dim]Scanned {len(found)} lockfiles in {path}[/dim]\n")
         for lockfile, (results, suspects) in per_file.items():
             rel = lockfile.relative_to(path) if lockfile.is_relative_to(path) else lockfile
@@ -348,7 +366,9 @@ def scan_directory(path: Path, output_format: str, threshold: float,
             console.print(f"  {status} {rel} — {len(results)} deps, {len(suspects)} suspect(s)")
         console.print()
     
-    if output_format == "json":
+    if quiet and output_format == "cli":
+        _output_quiet(all_suspects)
+    elif output_format == "json":
         _output_json(all_results, all_suspects)
     elif output_format == "sarif":
         _output_sarif(all_results, all_suspects, found[0][0])
