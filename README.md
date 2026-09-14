@@ -84,21 +84,13 @@ taintrace score proc-macro1
 
 ## Multi-ecosystem
 
-| Ecosystem | Lockfile           | Status |
-|-----------|--------------------|--------|
-| Rust      | Cargo.lock         | ✅     |
-| Node.js   | package-lock.json  | ✅     |
-| Python    | requirements.txt   | ✅     |
-| Go        | go.sum             | ✅     |
-
-## Multi-ecosystem
-
 | Ecosystem | Lockfiles                              | Status |
 |-----------|----------------------------------------|--------|
 | Rust      | Cargo.lock, Cargo.toml                 | ✅     |
 | Node.js   | package-lock.json, pnpm-lock.yaml, yarn.lock | ✅     |
-| Python    | requirements.txt, poetry.lock, pyproject.toml (PEP 621 + Poetry) | ✅     |
+| Python    | requirements.txt, poetry.lock, pyproject.toml (PEP 621 + Poetry), uv.lock, Pipfile.lock | ✅     |
 | Go        | go.sum                                 | ✅     |
+| Ruby      | Gemfile.lock                           | ✅     |
 
 ## CI/CD integration
 

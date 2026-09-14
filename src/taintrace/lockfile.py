@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Optional
+import json
 import re
 
 
@@ -24,6 +25,8 @@ EXTENDED_FORMATS = {
     "cargo.toml": ("rust", "_parse_cargo_toml"),
     "uv.lock": ("python", "_parse_uv_lock"),
     "pyproject.toml": ("python", "_parse_pyproject_toml"),
+    "gemfile.lock": ("ruby", "_parse_gemfile_lock"),
+    "pipfile.lock": ("python", "_parse_pipfile_lock"),
 }
 
 
@@ -300,4 +303,83 @@ class LockfileParser:
                         continue
                     deps.append(Dependency(name=name, version="", ecosystem="python"))
         
+        return deps
+
+    def _parse_gemfile_lock(self, path: Path) -> List[Dependency]:
+        """Parse Bundler Gemfile.lock (Ruby).
+
+        Format:
+            GEM
+              remote: https://rubygems.org/
+              specs:
+                rails (7.1.3)
+                  actioncable (= 7.1.3)
+                nokogiri (1.16.5)
+
+            PLATFORMS
+              ruby
+
+            BUNDLED WITH
+               2.5.11
+
+        Only top-level specs (4-space indent) are included, not sub-dependencies.
+        """
+        deps = []
+        content = path.read_text(encoding="utf-8", errors="replace")
+        in_specs = False
+        for line in content.splitlines():
+            stripped = line.strip()
+            if stripped == "specs:":
+                in_specs = True
+                continue
+            if stripped in ("PLATFORMS", "DEPENDENCIES", "BUNDLED WITH", "GEM", "GIT"):
+                in_specs = False
+                continue
+            if in_specs and stripped:
+                # Top-level specs have 4-space indent, sub-deps have 6+
+                indent = len(line) - len(line.lstrip())
+                if indent == 4 and "(" in stripped:
+                    match = re.match(r'^([a-zA-Z0-9_.-]+)\s+\(([^)]+)\)', stripped)
+                    if match:
+                        deps.append(Dependency(
+                            name=match.group(1),
+                            version=match.group(2),
+                            ecosystem="ruby",
+                        ))
+        return deps
+
+    def _parse_pipfile_lock(self, path: Path) -> List[Dependency]:
+        """Parse Pipenv Pipfile.lock (JSON).
+
+        Format:
+            {
+              "default": {
+                "requests": {
+                  "hashes": ["sha256:..."],
+                  "version": "==2.31.0"
+                }
+              },
+              "develop": { ... }
+            }
+        """
+        deps = []
+        try:
+            data = json.loads(path.read_text(encoding="utf-8", errors="replace"))
+        except (json.JSONDecodeError, FileNotFoundError):
+            return deps
+        for section in ("default", "develop"):
+            if not isinstance(data.get(section), dict):
+                continue
+            for pkg_name, pkg_info in data[section].items():
+                if not isinstance(pkg_info, dict):
+                    continue
+                version = pkg_info.get("version", "")
+                # Strip leading == from version
+                if version.startswith("=="):
+                    version = version[2:]
+                deps.append(Dependency(
+                    name=pkg_name,
+                    version=version,
+                    ecosystem="python",
+                ))
         return deps
