@@ -30,6 +30,12 @@ Multiple lockfiles at once:
 taintrace check Cargo.lock package-lock.json requirements.txt
 ```
 
+Scan PHP/Composer lockfiles:
+
+```bash
+taintrace check composer.lock
+```
+
 ### Scan a lockfile
 
 ```bash
@@ -60,7 +66,7 @@ taintrace scan-directory /path/to/repo    # scan specific path
 taintrace scan-directory . --format sarif # SARIF output for CI/CD
 ```
 
-Auto-discovers: Cargo.lock, package-lock.json, pnpm-lock.yaml, yarn.lock, bun.lock, bun.lockb, requirements.txt, Pipfile.lock, poetry.lock, uv.lock, go.sum, Gemfile.lock.
+Auto-discovers: Cargo.lock, package-lock.json, pnpm-lock.yaml, yarn.lock, bun.lock, bun.lockb, requirements.txt, Pipfile.lock, poetry.lock, uv.lock, go.sum, Gemfile.lock, composer.json, composer.lock.
 
 ### JSON output (CI/CD)
 
@@ -122,6 +128,7 @@ Ignored packages are excluded from CLI, JSON, and SARIF output.
 | Python    | requirements.txt, poetry.lock, pyproject.toml (PEP 621 + Poetry), uv.lock, Pipfile.lock | ✅     |
 | Go        | go.sum                                 | ✅     |
 | Ruby      | Gemfile.lock                           | ✅     |
+| PHP       | composer.json, composer.lock           | ✅     |
 
 ## CI/CD integration
 
