@@ -23,6 +23,7 @@ EXTENDED_FORMATS = {
     "yarn.lock": ("node", "_parse_yarn"),
     "cargo.toml": ("rust", "_parse_cargo_toml"),
     "uv.lock": ("python", "_parse_uv_lock"),
+    "pyproject.toml": ("python", "_parse_pyproject_toml"),
 }
 
 
@@ -246,4 +247,57 @@ class LockfileParser:
                     version=version_match.group(1),
                     ecosystem="python"
                 ))
+        return deps
+
+    def _parse_pyproject_toml(self, path: Path) -> List[Dependency]:
+        """Parse pyproject.toml (PEP 621) for dependency names.
+        
+        Extracts packages from:
+        - [project].dependencies (PEP 621 standard)
+        - [tool.poetry.dependencies] (Poetry format)
+        
+        Version specifiers (>=, <=, ==, ~=, etc.) are stripped to return
+        only the package name for typosquat comparison.
+        """
+        deps = []
+        content = path.read_text(encoding="utf-8", errors="replace")
+        
+        # Extract [project].dependencies section
+        # Look for [project] followed by dependencies = [ ... ]
+        project_deps_match = re.search(
+            r'^\s*\[project\][^\[]*?dependencies\s*=\s*\[(.*?)\]',
+            content, re.MULTILINE | re.DOTALL
+        )
+        if project_deps_match:
+            deps_text = project_deps_match.group(1)
+            for line in deps_text.splitlines():
+                line = line.strip().strip(',').strip('"').strip("'")
+                if not line or line.startswith('#'):
+                    continue
+                # Extract package name (before version specifier)
+                # Handles: "package>=1.0", "package == 1.0.*", "package"
+                name_match = re.match(r'^([a-zA-Z0-9_.-]+)', line)
+                if name_match:
+                    name = name_match.group(1)
+                    deps.append(Dependency(name=name, version="", ecosystem="python"))
+        
+        # Extract [tool.poetry.dependencies] section
+        poetry_match = re.search(
+            r'\[tool\.poetry\.dependencies\](.*?)(?:^\[|\Z)',
+            content, re.MULTILINE | re.DOTALL
+        )
+        if poetry_match:
+            for line in poetry_match.group(1).strip().splitlines():
+                line = line.strip()
+                if not line or line.startswith('#'):
+                    continue
+                # Format: name = "version" or name = {version = "..."}
+                dep_match = re.match(r'^([a-zA-Z0-9_.-]+)\s*=\s*', line)
+                if dep_match:
+                    name = dep_match.group(1)
+                    # Skip python version constraint
+                    if name == 'python':
+                        continue
+                    deps.append(Dependency(name=name, version="", ecosystem="python"))
+        
         return deps

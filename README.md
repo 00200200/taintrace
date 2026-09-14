@@ -97,7 +97,7 @@ taintrace score proc-macro1
 |-----------|----------------------------------------|--------|
 | Rust      | Cargo.lock, Cargo.toml                 | ✅     |
 | Node.js   | package-lock.json, pnpm-lock.yaml, yarn.lock | ✅     |
-| Python    | requirements.txt, poetry.lock          | ✅     |
+| Python    | requirements.txt, poetry.lock, pyproject.toml (PEP 621 + Poetry) | ✅     |
 | Go        | go.sum                                 | ✅     |
 
 ## CI/CD integration
