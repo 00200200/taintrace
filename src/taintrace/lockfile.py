@@ -14,7 +14,7 @@ class Dependency:
     """A parsed dependency from any lockfile."""
     name: str
     version: str
-    ecosystem: str  # "rust", "node", "python", "go"
+    ecosystem: str  # Registry used for known-package comparisons
 
 
 # Map of lowercase filenames to (parser_func, ecosystem)
@@ -31,6 +31,9 @@ EXTENDED_FORMATS = {
     "bun.lockb": ("node", "_parse_bun_lockb"),
     "composer.json": ("php", "_parse_composer_json"),
     "composer.lock": ("php", "_parse_composer_lock"),
+    "package.resolved": ("swift", "_parse_package_resolved"),
+    "package.swift": ("swift", "_parse_package_swift"),
+    "mix.lock": ("elixir", "_parse_mix_lock"),
 }
 
 
@@ -493,4 +496,94 @@ class LockfileParser:
                 version = pkg.get("version", "0.0.0")
                 if name:
                     deps.append(Dependency(name=name, version=version, ecosystem="php"))
+        return deps
+
+    def _parse_package_resolved(self, path: Path) -> List[Dependency]:
+        """Parse Swift Package Manager's Package.resolved JSON format.
+
+        SwiftPM v2 and v3 put ``pins`` at the document root, while v1 stores
+        the same array under ``object``. GitHub dependencies use a stable
+        ``github.com/owner/repository`` name so similarly named repositories
+        remain distinguishable.
+        """
+        try:
+            data = json.loads(path.read_text(encoding="utf-8", errors="replace"))
+        except (json.JSONDecodeError, FileNotFoundError):
+            return []
+
+        pins = data.get("pins")
+        if not isinstance(pins, list):
+            legacy = data.get("object", {})
+            pins = legacy.get("pins", []) if isinstance(legacy, dict) else []
+
+        deps = []
+        for pin in pins:
+            if not isinstance(pin, dict):
+                continue
+            state = pin.get("state", {})
+            if not isinstance(state, dict):
+                state = {}
+            location = pin.get("location") or pin.get("repositoryURL") or ""
+            name = self._swift_package_name(
+                str(location), str(pin.get("identity") or pin.get("package") or "")
+            )
+            if not name:
+                continue
+            version = state.get("version") or state.get("revision") or state.get("branch") or ""
+            deps.append(Dependency(name=name, version=str(version), ecosystem="swift"))
+        return deps
+
+    def _parse_package_swift(self, path: Path) -> List[Dependency]:
+        """Parse remote ``.package`` declarations from Package.swift."""
+        content = path.read_text(encoding="utf-8", errors="replace")
+        deps = []
+        declarations = re.findall(r"\.package\s*\((.*?)\)", content, re.DOTALL)
+        for declaration in declarations:
+            location_match = re.search(
+                r'(?:url|location)\s*:\s*"([^"]+)"', declaration
+            )
+            if not location_match:
+                continue
+            location = location_match.group(1)
+            name = self._swift_package_name(location, "")
+            if not name:
+                continue
+            version_match = re.search(
+                r'(?:from|exact|branch|revision)\s*:\s*"([^"]+)"', declaration
+            )
+            version = version_match.group(1) if version_match else ""
+            deps.append(Dependency(name=name, version=version, ecosystem="swift"))
+        return deps
+
+    @staticmethod
+    def _swift_package_name(location: str, fallback: str) -> str:
+        """Return a canonical name for a Swift package location."""
+        github_match = re.search(
+            r"github\.com[/:]([^/]+)/([^/#]+)", location, flags=re.IGNORECASE
+        )
+        if github_match:
+            owner, repository = github_match.groups()
+            return f"github.com/{owner}/{repository.removesuffix('.git')}"
+        return fallback
+
+    def _parse_mix_lock(self, path: Path) -> List[Dependency]:
+        """Parse Hex package entries from an Elixir ``mix.lock`` file.
+
+        ``mix.lock`` is an Elixir term rather than JSON. Each Hex entry starts
+        with a package map key followed by ``{:hex, :package, "version", ...}``.
+        Git and path entries are intentionally ignored because they are not
+        packages published in the Hex registry.
+        """
+        content = path.read_text(encoding="utf-8", errors="replace")
+        pattern = re.compile(
+            r'["\']([a-zA-Z0-9_.-]+)["\']\s*:\s*'
+            r'\{\s*:hex\s*,\s*:(?:"([^"\\]+)"|([a-zA-Z0-9_.-]+))\s*,\s*'
+            r'"([^"\\]+)"',
+            re.DOTALL,
+        )
+        deps = []
+        for match in pattern.finditer(content):
+            lock_name, quoted_package, atom_package, version = match.groups()
+            package_name = quoted_package or atom_package or lock_name
+            deps.append(Dependency(name=package_name, version=version, ecosystem="elixir"))
         return deps

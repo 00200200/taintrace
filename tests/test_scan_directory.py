@@ -68,6 +68,18 @@ class TestFindLockfiles:
             result = _find_lockfiles(root)
         assert len(result) == len(LOCKFILE_NAMES)
 
+    def test_discovers_swift_and_elixir_lockfiles(self):
+        """SwiftPM and Mix lockfiles are discovered with their ecosystems."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "Package.resolved").write_text('{"pins": [], "version": 2}')
+            (root / "mix.lock").write_text("%{}")
+            result = _find_lockfiles(root)
+        assert {(path.name, ecosystem) for path, ecosystem in result} == {
+            ("Package.resolved", "swift"),
+            ("mix.lock", "elixir"),
+        }
+
 
 class TestScanDirectoryCommand:
     """Test the scan-directory CLI subcommand."""

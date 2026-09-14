@@ -66,7 +66,7 @@ taintrace scan-directory /path/to/repo    # scan specific path
 taintrace scan-directory . --format sarif # SARIF output for CI/CD
 ```
 
-Auto-discovers: Cargo.lock, package-lock.json, pnpm-lock.yaml, yarn.lock, bun.lock, bun.lockb, requirements.txt, Pipfile.lock, poetry.lock, uv.lock, go.sum, Gemfile.lock, composer.json, composer.lock.
+Auto-discovers: Cargo.lock, package-lock.json, pnpm-lock.yaml, yarn.lock, bun.lock, bun.lockb, requirements.txt, Pipfile.lock, poetry.lock, uv.lock, go.sum, Gemfile.lock, composer.json, composer.lock, Package.resolved, Package.swift, mix.lock.
 
 ### JSON output (CI/CD)
 
@@ -129,6 +129,8 @@ Ignored packages are excluded from CLI, JSON, and SARIF output.
 | Go        | go.sum                                 | ✅     |
 | Ruby      | Gemfile.lock                           | ✅     |
 | PHP       | composer.json, composer.lock           | ✅     |
+| Swift     | Package.resolved, Package.swift         | ✅     |
+| Elixir    | mix.lock                               | ✅     |
 
 ## CI/CD integration
 

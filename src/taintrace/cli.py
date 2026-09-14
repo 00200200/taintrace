@@ -34,7 +34,9 @@ def cli():
 @click.option("--threshold", "-t", default=0.7, type=float,
               help="Similarity threshold (0.0-1.0)")
 @click.option("--ecosystem", "-e", default="auto",
-              type=click.Choice(["auto", "rust", "node", "python", "go", "ruby", "php"]),
+              type=click.Choice([
+                  "auto", "rust", "node", "python", "go", "ruby", "php", "swift", "elixir"
+              ]),
               help="Package ecosystem (auto-detect from filename by default)")
 @click.option("--no-informational", is_flag=True,
               help="Suppress MEDIUM/LOW risk results (informational only)")
@@ -96,7 +98,7 @@ def check(lockfiles: tuple[Path, ...], output_format: str, threshold: float,
 @cli.command()
 @click.argument("name")
 @click.option("--ecosystem", "-e", default="rust",
-              type=click.Choice(["rust", "node", "python", "go"]),
+              type=click.Choice(["rust", "node", "python", "go", "ruby", "php", "swift", "elixir"]),
               help="Package ecosystem")
 def score(name: str, ecosystem: str):
     """Score a single package name for typosquat risk."""
@@ -116,6 +118,10 @@ def _detect_ecosystem(lockfile: Path) -> str:
         return "python"
     elif name == "go.sum":
         return "go"
+    elif name in ("package.resolved", "package.swift"):
+        return "swift"
+    elif name == "mix.lock":
+        return "elixir"
     return "rust"
 
 
@@ -258,6 +264,9 @@ LOCKFILE_NAMES = {
     "Gemfile.lock": "ruby",
     "composer.json": "php",
     "composer.lock": "php",
+    "Package.resolved": "swift",
+    "Package.swift": "swift",
+    "mix.lock": "elixir",
 }
 
 # Directories to skip during recursive walk

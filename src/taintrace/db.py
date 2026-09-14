@@ -14,6 +14,8 @@ class KnownPackagesDB:
             "python": self._PYTHON_PACKAGES,
             "go": self._GO_PACKAGES,
             "php": self._PHP_PACKAGES,
+            "swift": self._SWIFT_PACKAGES,
+            "elixir": self._ELIXIR_PACKAGES,
         }
 
     def is_known(self, name: str, ecosystem: str = "rust") -> bool:
@@ -129,4 +131,36 @@ class KnownPackagesDB:
         "sebastian/resource-operations", "sebastian/type",
         "theseer/tokenizer", "webmozart/assert",
         "filp/whoops", "fzaninotto/faker",
+    }
+
+    _SWIFT_PACKAGES = {
+        "github.com/alamofire/alamofire",
+        "github.com/apple/swift-algorithms",
+        "github.com/apple/swift-argument-parser",
+        "github.com/apple/swift-async-algorithms",
+        "github.com/apple/swift-collections",
+        "github.com/apple/swift-crypto",
+        "github.com/apple/swift-docc-plugin",
+        "github.com/apple/swift-log",
+        "github.com/apple/swift-nio",
+        "github.com/apple/swift-numerics",
+        "github.com/apple/swift-protobuf",
+        "github.com/apple/swift-syntax",
+        "github.com/apple/swift-system",
+        "github.com/firebase/firebase-ios-sdk",
+        "github.com/getsentry/sentry-cocoa",
+        "github.com/onevcat/kingfisher",
+        "github.com/realm/realm-swift",
+        "github.com/siteline/swiftui-introspect",
+        "github.com/snapkit/snapkit",
+        "github.com/swiftyjson/swiftyjson",
+    }
+
+    _ELIXIR_PACKAGES = {
+        "absinthe", "bandit", "broadway", "castore", "comeonin", "decimal",
+        "ecto", "ecto_sql", "esbuild", "ex_doc", "finch", "floki", "gettext",
+        "hackney", "jason", "jose", "mime", "mint", "nimble_options", "oban",
+        "phoenix", "phoenix_ecto", "phoenix_html", "phoenix_live_view",
+        "phoenix_pubsub", "plug", "plug_cowboy", "postgrex", "req", "swoosh",
+        "telemetry", "tesla", "websock", "websock_adapter",
     }
