@@ -1,31 +1,47 @@
 ---
 name: Bug report
-about: Create a report to help us improve
-title: '[BUG] '
-labels: 'bug'
-assignees: ''
+about: Report a problem with taintrace
+title: "[BUG] "
+labels: ["bug"]
+assignees: []
 ---
 
-## Describe the bug
-A clear and concise description of what the bug is.
+## Description
 
-## To Reproduce
-Steps to reproduce the behavior:
-1. Go to '...'
-2. Click on '....'
-3. Scroll down to '....'
-4. See error
+Describe the bug and the lockfile or package that triggered it.
 
 ## Expected behavior
-A clear and concise description of what you expected to happen.
 
-## Screenshots
-If applicable, add screenshots to help explain your problem.
+What did you expect taintrace to do?
+
+## Actual behavior
+
+What happened instead? Include the exit code and any unexpected output.
+
+## Steps to reproduce
+
+1. Run `taintrace ...`
+2. With the lockfile or configuration `...`
+3. See the result
 
 ## Environment
-- OS: [e.g. Ubuntu 22.04]
-- Version: [e.g. 1.2.3]
-- Python/Rust/Node version: [e.g. Python 3.11]
+
+- OS: [e.g. Ubuntu 24.04, macOS 15]
+- Python: [e.g. 3.12.4]
+- taintrace version: [e.g. 0.2.1]
+- Installation method: [pip, source, GitHub Action]
+- Ecosystem/lockfile: [e.g. Rust/Cargo.lock]
+
+## Configuration and error output
+
+If applicable, include your `.taintrace.toml`, command-line flags, and the full
+error output. Remove secrets and private package names before posting.
+
+```
+Paste output here
+```
 
 ## Additional context
-Add any other context about the problem here.
+
+Add a minimal reproduction or any other context that may help diagnose the
+problem.

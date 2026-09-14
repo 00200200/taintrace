@@ -1,19 +1,28 @@
 ---
 name: Feature request
-about: Suggest an idea for this project
-title: '[FEATURE] '
-labels: 'enhancement'
-assignees: ''
+about: Suggest a new feature or improvement
+title: "[FEAT] "
+labels: ["enhancement"]
+assignees: []
 ---
 
-## Is your feature request related to a problem?
-A clear and concise description of what the problem is. Ex. I'm always frustrated when [...]
+## Description
 
-## Describe the solution you'd like
-A clear and concise description of what you want to happen.
+What feature or improvement would you like to see?
 
-## Describe alternatives you've considered
-A clear and concise description of any alternative solutions or features you've considered.
+## Motivation
+
+What problem does this solve, and who would benefit from it?
+
+## Proposed solution
+
+Describe the behavior or interface you have in mind. For ecosystem support,
+include the lockfile format and a representative example if possible.
+
+## Alternatives considered
+
+Describe any alternative approaches or workarounds you have tried.
 
 ## Additional context
-Add any other context or screenshots about the feature request here.
+
+Add examples, links, or other context that would help evaluate the request.
