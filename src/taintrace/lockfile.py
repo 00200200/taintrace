@@ -22,6 +22,7 @@ EXTENDED_FORMATS = {
     "pnpm-lock.yaml": ("node", "_parse_pnpm"),
     "yarn.lock": ("node", "_parse_yarn"),
     "cargo.toml": ("rust", "_parse_cargo_toml"),
+    "uv.lock": ("python", "_parse_uv_lock"),
 }
 
 
@@ -226,4 +227,23 @@ class LockfileParser:
                         version=parts[1],
                         ecosystem="go"
                     ))
+        return deps
+
+    def _parse_uv_lock(self, path: Path) -> List[Dependency]:
+        """Parse uv.lock (Astral uv package manager for Python).
+        
+        Format is TOML with [[package]] sections containing name and version.
+        """
+        deps = []
+        content = path.read_text(encoding="utf-8", errors="replace")
+        blocks = re.split(r'\[\[package\]\]', content)
+        for block in blocks[1:]:
+            name_match = re.search(r'name\s*=\s*"([^"]+)"', block)
+            version_match = re.search(r'version\s*=\s*"([^"]+)"', block)
+            if name_match and version_match:
+                deps.append(Dependency(
+                    name=name_match.group(1),
+                    version=version_match.group(1),
+                    ecosystem="python"
+                ))
         return deps
