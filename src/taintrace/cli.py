@@ -241,5 +241,114 @@ def _output_single(result: DetectionResult):
         console.print(f"[green]✅ {result.dependency.name}[/green] — {result.reason}")
 
 
+# Known lockfile names for auto-discovery
+LOCKFILE_NAMES = {
+    "Cargo.lock": "rust",
+    "Cargo.toml": "rust",
+    "package-lock.json": "node",
+    "pnpm-lock.yaml": "node",
+    "yarn.lock": "node",
+    "bun.lock": "node",
+    "bun.lockb": "node",
+    "requirements.txt": "python",
+    "Pipfile.lock": "python",
+    "poetry.lock": "python",
+    "uv.lock": "python",
+    "go.sum": "go",
+    "Gemfile.lock": "ruby",
+}
+
+# Directories to skip during recursive walk
+SKIP_DIRS = {".git", "node_modules", "vendor", ".vendor", "dist", "build", ".cache"}
+
+
+def _find_lockfiles(path: Path) -> list[tuple[Path, str]]:
+    """Recursively find lockfiles in a directory, returning (path, ecosystem) pairs."""
+    lockfiles = []
+    if not path.is_dir():
+        return lockfiles
+    
+    for item in path.iterdir():
+        if item.is_dir():
+            if item.name in SKIP_DIRS:
+                continue
+            lockfiles.extend(_find_lockfiles(item))
+        elif item.name in LOCKFILE_NAMES:
+            lockfiles.append((item, LOCKFILE_NAMES[item.name]))
+    
+    return lockfiles
+
+
+@cli.command()
+@click.argument("path", type=click.Path(exists=True, path_type=Path), default=".")
+@click.option("--format", "-f", "output_format",
+              type=click.Choice(["cli", "json", "sarif"]), default="cli",
+              help="Output format")
+@click.option("--threshold", "-t", default=0.7, type=float,
+              help="Similarity threshold (0.0-1.0)")
+@click.option("--no-informational", is_flag=True,
+              help="Suppress MEDIUM/LOW risk results")
+@click.option("--ignore", "-i", multiple=True, type=str,
+              help="Ignore specific packages (repeatable)")
+def scan_directory(path: Path, output_format: str, threshold: float,
+                   no_informational: bool, ignore: tuple[str, ...]):
+    """Recursively scan a directory tree for typosquatting in all lockfiles."""
+    found = _find_lockfiles(path)
+    
+    if not found:
+        console.print(f"[yellow]No lockfiles found in {path}[/yellow]")
+        return
+    
+    # Sort for deterministic output
+    found.sort(key=lambda x: str(x[0]))
+    
+    all_results = []
+    all_suspects = []
+    per_file = {}
+    
+    for lockfile, eco in found:
+        detector = TyposquatDetector(ecosystem=eco)
+        results = detector.scan(lockfile)
+        
+        # Merge ignores
+        config_ignored = set()
+        if lockfile.parent.exists():
+            from taintrace.config import get_ignored_packages
+            config_ignored = set(get_ignored_packages(lockfile.parent))
+        all_ignored = config_ignored | set(ignore)
+        
+        if all_ignored:
+            results = [r for r in results if r.dependency.name not in all_ignored]
+        
+        suspects = [r for r in results if r.is_suspect and r.risk_score >= threshold]
+        if no_informational:
+            suspects = [r for r in suspects if r.risk_level in ("CRITICAL", "HIGH")]
+        
+        all_results.extend(results)
+        all_suspects.extend(suspects)
+        per_file[lockfile] = (results, suspects)
+    
+    # Per-file summary
+    if len(found) > 1:
+        console.print(f"[dim]Scanned {len(found)} lockfiles in {path}[/dim]\n")
+        for lockfile, (results, suspects) in per_file.items():
+            rel = lockfile.relative_to(path) if lockfile.is_relative_to(path) else lockfile
+            status = "[red]🚨[/red]" if suspects else "[green]✅[/green]"
+            console.print(f"  {status} {rel} — {len(results)} deps, {len(suspects)} suspect(s)")
+        console.print()
+    
+    if output_format == "json":
+        _output_json(all_results, all_suspects)
+    elif output_format == "sarif":
+        _output_sarif(all_results, all_suspects, found[0][0])
+    else:
+        if len(found) > 1 and all_suspects:
+            console.print(f"[bold]Aggregated suspects across {len(found)} lockfiles:[/bold]")
+        _output_cli(all_results, all_suspects, [lf for lf, _ in found])
+    
+    if all_suspects:
+        sys.exit(1)
+
+
 if __name__ == "__main__":
     cli()

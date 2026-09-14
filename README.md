@@ -52,6 +52,16 @@ taintrace check Cargo.lock
 ❌ 1 suspect(s) found — review required
 ```
 
+### Scan directory tree
+
+```bash
+taintrace scan-directory .                # recursive scan of all lockfiles
+taintrace scan-directory /path/to/repo    # scan specific path
+taintrace scan-directory . --format sarif # SARIF output for CI/CD
+```
+
+Auto-discovers: Cargo.lock, package-lock.json, pnpm-lock.yaml, yarn.lock, bun.lock, bun.lockb, requirements.txt, Pipfile.lock, poetry.lock, uv.lock, go.sum, Gemfile.lock.
+
 ### JSON output (CI/CD)
 
 ```bash
