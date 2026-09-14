@@ -2,7 +2,7 @@
   name: Check for typosquat dependencies
   entry: taintrace check
   language: python
-  files: '(Cargo\.lock|package-lock\.json|requirements\.txt|go\.sum|pnpm-lock\.yaml|yarn\.lock|poetry\.lock|uv\.lock|pyproject\.toml|Gemfile\.lock|Pipfile\.lock|bun\.lock|bun\.lockb)$'
+  files: '(Cargo\.lock|package-lock\.json|requirements\.txt|go\.sum|pnpm-lock\.yaml|yarn\.lock|poetry\.lock|uv\.lock|pyproject\.toml|Gemfile\.lock|Pipfile\.lock|bun\.lock|bun\.lockb|composer\.json|composer\.lock)$'
   additional_dependencies:
     - "taintrace>=0.2.0"
   args: ["--no-informational"]

@@ -34,7 +34,7 @@ def cli():
 @click.option("--threshold", "-t", default=0.7, type=float,
               help="Similarity threshold (0.0-1.0)")
 @click.option("--ecosystem", "-e", default="auto",
-              type=click.Choice(["auto", "rust", "node", "python", "go"]),
+              type=click.Choice(["auto", "rust", "node", "python", "go", "ruby", "php"]),
               help="Package ecosystem (auto-detect from filename by default)")
 @click.option("--no-informational", is_flag=True,
               help="Suppress MEDIUM/LOW risk results (informational only)")
@@ -256,6 +256,8 @@ LOCKFILE_NAMES = {
     "uv.lock": "python",
     "go.sum": "go",
     "Gemfile.lock": "ruby",
+    "composer.json": "php",
+    "composer.lock": "php",
 }
 
 # Directories to skip during recursive walk

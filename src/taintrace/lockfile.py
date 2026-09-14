@@ -29,6 +29,8 @@ EXTENDED_FORMATS = {
     "pipfile.lock": ("python", "_parse_pipfile_lock"),
     "bun.lock": ("node", "_parse_bun_lock"),
     "bun.lockb": ("node", "_parse_bun_lockb"),
+    "composer.json": ("php", "_parse_composer_json"),
+    "composer.lock": ("php", "_parse_composer_lock"),
 }
 
 
@@ -424,3 +426,71 @@ class LockfileParser:
             stacklevel=2,
         )
         return []
+
+    def _parse_composer_json(self, path: Path) -> List[Dependency]:
+        """Parse composer.json require/require-dev sections.
+
+        Format:
+            {
+              "require": {
+                "guzzlehttp/guzzle": "^7.0",
+                "symfony/console": "^6.0"
+              },
+              "require-dev": {
+                "phpunit/phpunit": "^10.0"
+              }
+            }
+        """
+        deps = []
+        try:
+            data = json.loads(path.read_text(encoding="utf-8", errors="replace"))
+        except (json.JSONDecodeError, FileNotFoundError):
+            return deps
+        for section in ("require", "require-dev"):
+            if not isinstance(data.get(section), dict):
+                continue
+            for pkg_name, version_spec in data[section].items():
+                # Skip the php version constraint
+                if pkg_name == "php":
+                    continue
+                # Extract base version from constraint (e.g., "^7.0" -> "7.0")
+                version = re.sub(r'^[~^>=<\s]+', '', str(version_spec)).strip()
+                if not version:
+                    version = "0.0.0"
+                deps.append(Dependency(
+                    name=pkg_name,
+                    version=version,
+                    ecosystem="php",
+                ))
+        return deps
+
+    def _parse_composer_lock(self, path: Path) -> List[Dependency]:
+        """Parse composer.lock packages array.
+
+        Format:
+            {
+              "packages": [
+                {
+                  "name": "guzzlehttp/guzzle",
+                  "version": "7.8.0",
+                  ...
+                },
+                ...
+              ],
+              "packages-dev": [...]
+            }
+        """
+        deps = []
+        try:
+            data = json.loads(path.read_text(encoding="utf-8", errors="replace"))
+        except (json.JSONDecodeError, FileNotFoundError):
+            return deps
+        for section in ("packages", "packages-dev"):
+            for pkg in data.get(section, []):
+                if not isinstance(pkg, dict):
+                    continue
+                name = pkg.get("name", "")
+                version = pkg.get("version", "0.0.0")
+                if name:
+                    deps.append(Dependency(name=name, version=version, ecosystem="php"))
+        return deps

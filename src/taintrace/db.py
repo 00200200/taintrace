@@ -13,6 +13,7 @@ class KnownPackagesDB:
             "node": self._NODE_PACKAGES,
             "python": self._PYTHON_PACKAGES,
             "go": self._GO_PACKAGES,
+            "php": self._PHP_PACKAGES,
         }
 
     def is_known(self, name: str, ecosystem: str = "rust") -> bool:
@@ -92,4 +93,40 @@ class KnownPackagesDB:
         "mongo-go-driver", "aws-sdk-go", "kubernetes/client-go",
         "docker/client", "stretchr/testify", "sirupsen/logrus",
         "pkg/errors", "go-kit/kit", "go-micro",
+    }
+
+    _PHP_PACKAGES = {
+        "guzzlehttp/guzzle", "symfony/console", "symfony/framework-bundle",
+        "symfony/http-foundation", "symfony/http-kernel", "symfony/routing",
+        "symfony/dependency-injection", "symfony/config", "symfony/yaml",
+        "symfony/finder", "symfony/process", "symfony/event-dispatcher",
+        "symfony/var-dumper", "symfony/error-handler", "symfony/serializer",
+        "symfony/property-access", "symfony/security-core",
+        "doctrine/orm", "doctrine/dbal", "doctrine/common",
+        "laravel/framework", "illuminate/support", "illuminate/database",
+        "illuminate/routing", "illuminate/container",
+        "phpunit/phpunit", "mockery/mockery", "monolog/monolog",
+        "vlucas/phpdotenv", "nesbot/carbon", "league/flysystem",
+        "phpoffice/phpspreadsheet", "twig/twig", "slim/slim",
+        "squizlabs/php_codesniffer", "phpstan/phpstan", "composer/composer",
+        "phpspec/prophecy", "guzzlehttp/promises", "guzzlehttp/psr7",
+        "psr/log", "psr/http-message", "psr/container", "psr/cache",
+        "psr/simple-cache", "psr/event-dispatcher", "psr/http-factory",
+        "psr/http-server-handler", "psr/http-server-middleware",
+        "brick/math", "dragonmantank/cron-expression",
+        "dompdf/dompdf", "phpmailer/phpmailer",
+        "stripe/stripe-php", "firebase/php-jwt",
+        "aws/aws-sdk-php", "google/auth", "google/apiclient",
+        "ramsey/uuid", "fideloper/proxy", "phpseclib/phpseclib",
+        "briannesbitt/carbon", "league/oauth2-server",
+        "php-http/guzzle7-adapter", "php-http/httplug",
+        "guzzlehttp/guzzle-services", "fzaninotto/faker",
+        "psy/psysh", "dnoegel/php-xdg-base-dir",
+        "nikic/php-parser", "sebastian/comparator",
+        "sebastian/diff", "sebastian/environment",
+        "sebastian/exporter", "sebastian/global-state",
+        "sebastian/object-enumerator", "sebastian/recursion-context",
+        "sebastian/resource-operations", "sebastian/type",
+        "theseer/tokenizer", "webmozart/assert",
+        "filp/whoops", "fzaninotto/faker",
     }
