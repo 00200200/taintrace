@@ -17,6 +17,7 @@ class KnownPackagesDB:
             "php": self._PHP_PACKAGES,
             "swift": self._SWIFT_PACKAGES,
             "elixir": self._ELIXIR_PACKAGES,
+            "dart": self._DART_PACKAGES,
         }
 
     def is_known(self, name: str, ecosystem: str = "rust") -> bool:
@@ -224,4 +225,11 @@ class KnownPackagesDB:
         "phoenix", "phoenix_ecto", "phoenix_html", "phoenix_live_view",
         "phoenix_pubsub", "plug", "plug_cowboy", "postgrex", "req", "swoosh",
         "telemetry", "tesla", "websock", "websock_adapter",
+    }
+
+    _DART_PACKAGES = {
+        "async", "collection", "cupertino_icons", "dio", "flutter_lints",
+        "go_router", "http", "intl", "json_annotation", "meta", "path",
+        "provider", "riverpod", "shared_preferences", "sqflite", "test",
+        "url_launcher", "uuid", "yaml",
     }

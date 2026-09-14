@@ -34,6 +34,7 @@ EXTENDED_FORMATS = {
     "package.resolved": ("swift", "_parse_package_resolved"),
     "package.swift": ("swift", "_parse_package_swift"),
     "mix.lock": ("elixir", "_parse_mix_lock"),
+    "pubspec.yaml": ("dart", "_parse_pubspec_yaml"),
 }
 
 
@@ -310,6 +311,94 @@ class LockfileParser:
                         continue
                     deps.append(Dependency(name=name, version="", ecosystem="python"))
         
+        return deps
+
+    def _parse_pubspec_yaml(self, path: Path) -> List[Dependency]:
+        """Parse Dart/Flutter dependencies from ``pubspec.yaml``.
+
+        Pubspec files use a small, predictable YAML mapping for dependencies.
+        Keep this parser dependency-free by reading only the direct children of
+        ``dependencies``, ``dev_dependencies``, and ``dependency_overrides``.
+        SDK dependencies such as ``flutter: {sdk: flutter}`` are not packages
+        from the pub registry and are therefore ignored.
+        """
+        content = path.read_text(encoding="utf-8", errors="replace")
+        dependency_sections = {
+            "dependencies",
+            "dev_dependencies",
+            "dependency_overrides",
+        }
+        deps = []
+        seen = set()
+        active_section = None
+        section_indent = None
+        current = None
+
+        def append_current() -> None:
+            if current is None or current["is_sdk"]:
+                return
+            name = current["name"]
+            if name in seen:
+                return
+            seen.add(name)
+            deps.append(Dependency(
+                name=name,
+                version=current["version"],
+                ecosystem="dart",
+            ))
+
+        for raw_line in content.splitlines():
+            # Preserve URL fragments while removing ordinary inline comments.
+            line = re.sub(r"\s+#.*$", "", raw_line.rstrip())
+            if not line.strip():
+                continue
+
+            indent = len(line) - len(line.lstrip(" "))
+            if indent == 0:
+                append_current()
+                current = None
+                section_indent = None
+                section_match = re.match(
+                    r"^([a-zA-Z0-9_-]+):(?:\s*(.*))?$", line
+                )
+                active_section = (
+                    section_match.group(1)
+                    if section_match and section_match.group(1) in dependency_sections
+                    else None
+                )
+                continue
+
+            if active_section is None:
+                continue
+            if section_indent is None:
+                section_indent = indent
+            if indent < section_indent:
+                append_current()
+                current = None
+                active_section = None
+                section_indent = None
+                continue
+
+            if indent == section_indent:
+                append_current()
+                dependency_match = re.match(
+                    r"^\s*([a-zA-Z0-9_.-]+):(?:\s*(.*))?$", line
+                )
+                current = None
+                if not dependency_match:
+                    continue
+
+                value = (dependency_match.group(2) or "").strip()
+                is_sdk = bool(re.search(r"\bsdk\s*:", value))
+                current = {
+                    "name": dependency_match.group(1),
+                    "version": value.strip("\"'"),
+                    "is_sdk": is_sdk,
+                }
+            elif current is not None and re.match(r"^\s+sdk\s*:", line):
+                current["is_sdk"] = True
+
+        append_current()
         return deps
 
     def _parse_gemfile_lock(self, path: Path) -> List[Dependency]:

@@ -35,7 +35,7 @@ def cli():
               help="Similarity threshold (0.0-1.0)")
 @click.option("--ecosystem", "-e", default="auto",
               type=click.Choice([
-                  "auto", "rust", "node", "python", "go", "ruby", "php", "swift", "elixir"
+                  "auto", "rust", "node", "python", "go", "ruby", "php", "swift", "elixir", "dart"
               ]),
               help="Package ecosystem (auto-detect from filename by default)")
 @click.option("--no-informational", is_flag=True,
@@ -98,7 +98,7 @@ def check(lockfiles: tuple[Path, ...], output_format: str, threshold: float,
 @cli.command()
 @click.argument("name")
 @click.option("--ecosystem", "-e", default="rust",
-              type=click.Choice(["rust", "node", "python", "go", "ruby", "php", "swift", "elixir"]),
+              type=click.Choice(["rust", "node", "python", "go", "ruby", "php", "swift", "elixir", "dart"]),
               help="Package ecosystem")
 def score(name: str, ecosystem: str):
     """Score a single package name for typosquat risk."""
@@ -122,6 +122,8 @@ def _detect_ecosystem(lockfile: Path) -> str:
         return "swift"
     elif name == "mix.lock":
         return "elixir"
+    elif name == "pubspec.yaml":
+        return "dart"
     return "rust"
 
 
@@ -267,6 +269,7 @@ LOCKFILE_NAMES = {
     "Package.resolved": "swift",
     "Package.swift": "swift",
     "mix.lock": "elixir",
+    "pubspec.yaml": "dart",
 }
 
 # Directories to skip during recursive walk
