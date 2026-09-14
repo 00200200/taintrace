@@ -4,6 +4,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Optional
 
+from taintrace.config import get_ignored_packages
+
 
 @dataclass
 class DetectionResult:
@@ -33,8 +35,12 @@ class TyposquatDetector:
         parser = LockfileParser()
         deps = parser.parse(lockfile_path)
         results = []
+        
+        ignored = set(get_ignored_packages(lockfile_path.parent if lockfile_path.parent.exists() else None))
 
         for dep in deps:
+            if dep.name in ignored:
+                continue
             result = self._score_dep(dep)
             results.append(result)
 

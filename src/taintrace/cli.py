@@ -38,8 +38,10 @@ def cli():
               help="Package ecosystem (auto-detect from filename by default)")
 @click.option("--no-informational", is_flag=True,
               help="Suppress MEDIUM/LOW risk results (informational only)")
+@click.option("--ignore", "-i", multiple=True, type=str,
+              help="Ignore specific packages (repeatable, can also be set in .taintrace.toml)")
 def check(lockfiles: tuple[Path, ...], output_format: str, threshold: float,
-          ecosystem: str, no_informational: bool):
+          ecosystem: str, no_informational: bool, ignore: tuple[str, ...]):
     """Check one or more lockfiles for typosquatting."""
     if not lockfiles:
         click.echo("Error: at least one lockfile required", err=True)
@@ -56,6 +58,18 @@ def check(lockfiles: tuple[Path, ...], output_format: str, threshold: float,
         
         detector = TyposquatDetector(ecosystem=eco)
         results = detector.scan(lockfile)
+        
+        # Merge CLI --ignore with config file ignore list
+        config_ignored = set()
+        if lockfile.parent.exists():
+            from taintrace.config import get_ignored_packages
+            config_ignored = set(get_ignored_packages(lockfile.parent))
+        cli_ignored = set(ignore)
+        all_ignored = config_ignored | cli_ignored
+        
+        # Filter out ignored packages
+        if all_ignored:
+            results = [r for r in results if r.dependency.name not in all_ignored]
         
         # Filter by threshold
         suspects = [r for r in results if r.is_suspect and r.risk_score >= threshold]

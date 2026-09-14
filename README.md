@@ -75,6 +75,27 @@ taintrace score proc-macro1
 - `0` — no suspects found
 - `1` — one or more suspects detected (use in CI/CD gates)
 
+## Ignoring False Positives
+
+To permanently suppress false-positive typosquats, use a `.taintrace.toml` file in your project root:
+
+```toml
+# .taintrace.toml
+[taintrace]
+ignore = [
+  "my-internal-mirror",
+  "legit-package-with-similar-name"
+]
+```
+
+Or ignore packages via CLI flag:
+
+```bash
+taintrace check Cargo.lock --ignore proc-macro1 --ignore some-legit-package
+```
+
+Ignored packages are excluded from CLI, JSON, and SARIF output.
+
 ## Algorithms
 
 - **Levenshtein distance** — edit distance between names
