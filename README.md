@@ -120,7 +120,7 @@ Auto-detect lockfiles in your repo root:
 ```yaml
 repos:
   - repo: https://github.com/yunaremaia/taintrace
-    rev: v0.2.0
+    rev: v0.2.1
     hooks:
       - id: taintrace
 ```
